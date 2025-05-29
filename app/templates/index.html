@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Прогноз погоды</title>
+    <script src="/static/script.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: sans-serif; max-width: 600px; margin: auto; padding: 2rem; }
+        input, button { padding: 0.5rem; margin-top: 1rem; width: 100%; }
+        .weather { margin-top: 2rem; }
+    </style>
+</head>
+<body>
+    <h1>Погода в городе</h1>
+
+    <form method="post" action="/weather">
+        <input list="cities" name="city" id="city" placeholder="Введите город" value="{{ last_city or '' }}" required>
+        <datalist id="cities"></datalist>
+        <button type="submit">Показать прогноз</button>
+    </form>
+
+    {% if error %}
+        <p style="color: red">{{ error }}</p>
+    {% endif %}
+
+    {% if forecast %}
+        <div class="weather">
+            <h2>Погода в {{ city }}</h2>
+            <p>Температура: {{ forecast.temperature }}°C</p>
+            <p>Скорость ветра: {{ forecast.windspeed }} км/ч</p>
+            <p>Время: {{ forecast.time }}</p>
+        </div>
+    {% endif %}
+
+    <button onclick="loadStats()">Показать статистику</button>
+    <canvas id="statsChart" width="400" height="200" style="display:none;"></canvas>
+
+    <script>
+        async function loadStats() {
+            const res = await fetch("/api/stats");
+            const data = await res.json();
+
+            const ctx = document.getElementById('statsChart').getContext('2d');
+            document.getElementById('statsChart').style.display = 'block';
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(data),
+                    datasets: [{
+                        label: 'Количество запросов',
+                        data: Object.values(data),
+                        backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
